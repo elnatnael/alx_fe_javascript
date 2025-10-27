@@ -92,13 +92,16 @@ function createAddQuoteForm() {
   updateQuotesList();
 }
 
-// Initialize the page
+// ✅ Single DOMContentLoaded — correct version
 document.addEventListener("DOMContentLoaded", () => {
   createAddQuoteForm();
 
-  // Create button to show random quote
-  const randomButton = document.createElement("button");
-  randomButton.textContent = "Show Random Quote";
-  randomButton.addEventListener("click", showRandomQuote);
-  document.body.appendChild(randomButton);
+  // Create the "Show New Quote" button
+  const newQuoteButton = document.createElement("button");
+  newQuoteButton.id = "newQuote";
+  newQuoteButton.textContent = "Show New Quote";
+  document.body.appendChild(newQuoteButton);
+
+  // Add event listener
+  newQuoteButton.addEventListener("click", showRandomQuote);
 });
