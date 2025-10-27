@@ -1,4 +1,4 @@
-// Step 1: Initialize quotes array from localStorage
+// Step 1: Load quotes from localStorage or start with defaults
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
   { text: "Life is what happens when you're busy making other plans.", category: "Life" },
@@ -14,18 +14,17 @@ function showRandomQuote() {
 
   const randomIndex = Math.floor(Math.random() * quotes.length);
   const quote = quotes[randomIndex];
-  const displayArea = document.getElementById("random-quote-display");
+  const displayArea = document.getElementById("quoteDisplay");
 
   displayArea.innerHTML = `<p>"${quote.text}" — <strong>${quote.category}</strong></p>`;
 
-  // Save last viewed quote in session storage
+  // Save last viewed quote in sessionStorage
   sessionStorage.setItem("lastViewedQuote", JSON.stringify(quote));
 }
 
-// Step 3: Create a form to add new quotes dynamically
+// Step 3: Create a form to add new quotes
 function createAddQuoteForm() {
   const formContainer = document.getElementById("add-quote-form");
-
   formContainer.innerHTML = `
     <h3>Add a New Quote</h3>
     <input type="text" id="quote-text" placeholder="Quote text" /><br/><br/>
@@ -37,7 +36,6 @@ function createAddQuoteForm() {
   const addButton = document.getElementById("add-quote-button");
   const quotesList = document.getElementById("quotes-list");
 
-  // Update displayed quotes list
   function updateQuotesList() {
     quotesList.innerHTML = "";
     quotes.forEach((q, index) => {
@@ -50,7 +48,7 @@ function createAddQuoteForm() {
       quotesList.appendChild(quoteDiv);
     });
 
-    // Remove quote event
+    // Remove quote
     document.querySelectorAll(".remove-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const idx = e.target.getAttribute("data-index");
@@ -62,7 +60,7 @@ function createAddQuoteForm() {
     });
   }
 
-  // Add new quote event
+  // Add new quote
   addButton.addEventListener("click", () => {
     const textInput = document.getElementById("quote-text").value.trim();
     const categoryInput = document.getElementById("quote-category").value.trim();
@@ -73,8 +71,7 @@ function createAddQuoteForm() {
     }
 
     quotes.push({ text: textInput, category: categoryInput });
-    localStorage.setItem("quotes", JSON.stringify(quotes)); // Save to localStorage
-
+    localStorage.setItem("quotes", JSON.stringify(quotes));
     document.getElementById("quote-text").value = "";
     document.getElementById("quote-category").value = "";
 
@@ -103,7 +100,7 @@ function importFromJsonFile(event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     try {
       const importedQuotes = JSON.parse(e.target.result);
       if (Array.isArray(importedQuotes)) {
@@ -115,17 +112,16 @@ function importFromJsonFile(event) {
       } else {
         alert("Invalid file format.");
       }
-    } catch (error) {
+    } catch {
       alert("Error reading file.");
     }
   };
   reader.readAsText(file);
 }
 
-// Step 6: Populate categories dropdown
+// Step 6: Populate categories in dropdown
 function populateCategories() {
-  let categoryFilter = document.getElementById("categoryFilter");
-
+  const categoryFilter = document.getElementById("categoryFilter");
   const uniqueCategories = [...new Set(quotes.map((quote) => quote.category))];
 
   categoryFilter.innerHTML = "";
@@ -142,23 +138,25 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
 
+  // Restore last selected category
   const savedCategory = localStorage.getItem("selectedCategory");
   if (savedCategory) {
     categoryFilter.value = savedCategory;
     filterQuote();
   }
 
+  // Save category change
   categoryFilter.addEventListener("change", () => {
     localStorage.setItem("selectedCategory", categoryFilter.value);
     filterQuote();
   });
 }
 
-// Step 7: Filter quotes by category
+// Step 7: Filter and display quotes by selected category
 function filterQuote() {
   const categoryFilter = document.getElementById("categoryFilter");
   const selectedCategory = categoryFilter.value;
-  const displayArea = document.getElementById("random-quote-display");
+  const displayArea = document.getElementById("quoteDisplay");
 
   if (selectedCategory === "all") {
     displayArea.innerHTML = quotes
@@ -178,25 +176,20 @@ function filterQuote() {
   }
 }
 
-// Step 8: Initialize the page
+// Step 8: Initialize everything
 document.addEventListener("DOMContentLoaded", () => {
   createAddQuoteForm();
   populateCategories();
 
-  const newQuoteButton = document.getElementById("newQuote");
-  newQuoteButton.addEventListener("click", showRandomQuote);
-
-  const exportButton = document.getElementById("exportQuotes");
-  exportButton.addEventListener("click", exportToJsonFile);
-
-  const importInput = document.getElementById("importQuotes");
-  importInput.addEventListener("change", importFromJsonFile);
+  document.getElementById("newQuote").addEventListener("click", showRandomQuote);
+  document.getElementById("exportQuotes").addEventListener("click", exportToJsonFile);
+  document.getElementById("importQuotes").addEventListener("change", importFromJsonFile);
 
   // Restore last viewed quote
   const lastQuote = sessionStorage.getItem("lastViewedQuote");
   if (lastQuote) {
     const quote = JSON.parse(lastQuote);
-    const displayArea = document.getElementById("random-quote-display");
+    const displayArea = document.getElementById("quoteDisplay");
     displayArea.innerHTML = `<p>"${quote.text}" — <strong>${quote.category}</strong></p>`;
   }
 });
