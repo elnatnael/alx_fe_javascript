@@ -1,4 +1,4 @@
-// Step 1: Load quotes from localStorage or start with defaults
+// Step 1: Load quotes from localStorage or defaults
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
   { text: "Life is what happens when you're busy making other plans.", category: "Life" },
@@ -17,12 +17,10 @@ function showRandomQuote() {
   const displayArea = document.getElementById("quoteDisplay");
 
   displayArea.innerHTML = `<p>"${quote.text}" — <strong>${quote.category}</strong></p>`;
-
-  // Save last viewed quote in sessionStorage
   sessionStorage.setItem("lastViewedQuote", JSON.stringify(quote));
 }
 
-// Step 3: Create a form to add new quotes
+// Step 3: Create Add Quote Form
 function createAddQuoteForm() {
   const formContainer = document.getElementById("add-quote-form");
   formContainer.innerHTML = `
@@ -48,7 +46,6 @@ function createAddQuoteForm() {
       quotesList.appendChild(quoteDiv);
     });
 
-    // Remove quote
     document.querySelectorAll(".remove-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const idx = e.target.getAttribute("data-index");
@@ -60,7 +57,6 @@ function createAddQuoteForm() {
     });
   }
 
-  // Add new quote
   addButton.addEventListener("click", () => {
     const textInput = document.getElementById("quote-text").value.trim();
     const categoryInput = document.getElementById("quote-category").value.trim();
@@ -82,7 +78,7 @@ function createAddQuoteForm() {
   updateQuotesList();
 }
 
-// Step 4: Export quotes to JSON file
+// Step 4: Export quotes
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -94,7 +90,7 @@ function exportToJsonFile() {
   URL.revokeObjectURL(url);
 }
 
-// Step 5: Import quotes from JSON file
+// Step 5: Import quotes
 function importFromJsonFile(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -119,13 +115,12 @@ function importFromJsonFile(event) {
   reader.readAsText(file);
 }
 
-// Step 6: Populate categories in dropdown
+// Step 6: Populate categories
 function populateCategories() {
   const categoryFilter = document.getElementById("categoryFilter");
   const uniqueCategories = [...new Set(quotes.map((quote) => quote.category))];
 
   categoryFilter.innerHTML = "";
-
   const allOption = document.createElement("option");
   allOption.value = "all";
   allOption.textContent = "All Categories";
@@ -138,21 +133,19 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
 
-  // Restore last selected category
   const savedCategory = localStorage.getItem("selectedCategory");
   if (savedCategory) {
     categoryFilter.value = savedCategory;
     filterQuote();
   }
 
-  // Save category change
   categoryFilter.addEventListener("change", () => {
     localStorage.setItem("selectedCategory", categoryFilter.value);
     filterQuote();
   });
 }
 
-// Step 7: Filter and display quotes by selected category
+// Step 7: Filter quotes
 function filterQuote() {
   const categoryFilter = document.getElementById("categoryFilter");
   const selectedCategory = categoryFilter.value;
@@ -167,7 +160,7 @@ function filterQuote() {
       (q) => q.category === selectedCategory
     );
     if (filteredQuotes.length === 0) {
-      displayArea.innerHTML = `<p>No quotes available for <strong>${selectedCategory}</strong>.</p>`;
+      displayArea.innerHTML = `<p>No quotes for <strong>${selectedCategory}</strong>.</p>`;
     } else {
       displayArea.innerHTML = filteredQuotes
         .map((q) => `<p>"${q.text}" — <strong>${q.category}</strong></p>`)
@@ -176,7 +169,78 @@ function filterQuote() {
   }
 }
 
-// Step 8: Initialize everything
+// 🆕 Step 8: Fetch quotes from a mock API server
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts?_limit=5");
+    const data = await response.json();
+
+    // Convert mock data to quote format
+    const serverQuotes = data.map((item) => ({
+      text: item.title,
+      category: "Server",
+    }));
+
+    return serverQuotes;
+  } catch (error) {
+    console.error("Error fetching quotes from server:", error);
+    return [];
+  }
+}
+
+// 🆕 Step 9: Sync quotes between local and server
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+  let updated = false;
+
+  serverQuotes.forEach((serverQuote) => {
+    const exists = quotes.some((q) => q.text === serverQuote.text);
+    if (!exists) {
+      quotes.push(serverQuote);
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    localStorage.setItem("quotes", JSON.stringify(quotes));
+    createAddQuoteForm();
+    populateCategories();
+    showNotification("Quotes synced with server!");
+  }
+
+  // Simulate posting new quotes to the server
+  await fetch("https://jsonplaceholder.typicode.com/posts", {
+    method: "POST",
+    body: JSON.stringify({ quotes }),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// 🆕 Step 10: Notification banner for sync
+function showNotification(message) {
+  let notif = document.getElementById("notification");
+  if (!notif) {
+    notif = document.createElement("div");
+    notif.id = "notification";
+    notif.style.background = "#4caf50";
+    notif.style.color = "white";
+    notif.style.padding = "10px";
+    notif.style.position = "fixed";
+    notif.style.bottom = "10px";
+    notif.style.right = "10px";
+    notif.style.borderRadius = "5px";
+    document.body.appendChild(notif);
+  }
+
+  notif.textContent = message;
+  notif.style.display = "block";
+
+  setTimeout(() => {
+    notif.style.display = "none";
+  }, 3000);
+}
+
+// Step 11: Initialize
 document.addEventListener("DOMContentLoaded", () => {
   createAddQuoteForm();
   populateCategories();
@@ -185,11 +249,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exportQuotes").addEventListener("click", exportToJsonFile);
   document.getElementById("importQuotes").addEventListener("change", importFromJsonFile);
 
-  // Restore last viewed quote
   const lastQuote = sessionStorage.getItem("lastViewedQuote");
   if (lastQuote) {
     const quote = JSON.parse(lastQuote);
     const displayArea = document.getElementById("quoteDisplay");
     displayArea.innerHTML = `<p>"${quote.text}" — <strong>${quote.category}</strong></p>`;
   }
+
+  // 🔁 Periodic sync every 10 seconds
+  syncQuotes();
+  setInterval(syncQuotes, 10000);
 });
